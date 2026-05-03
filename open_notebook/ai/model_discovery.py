@@ -133,6 +133,7 @@ ELEVENLABS_MODEL_TYPES = {
 
 DASHSCOPE_MODEL_TYPES = {
     "language": ["qwen"],
+    "embedding": ["text-embedding", "embedding"],
 }
 
 MINIMAX_MODEL_TYPES = {

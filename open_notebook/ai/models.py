@@ -147,6 +147,18 @@ class ModelManager:
         # Normalize provider name: DB stores underscores but Esperanto expects hyphens
         provider = model.provider.replace("_", "-")
 
+        # Special handling for DashScope embedding (uses OpenAI-compatible API)
+        # Esperanto doesn't support 'dashscope' as an embedding provider,
+        # but DashScope provides OpenAI-compatible embedding API
+        if provider == "dashscope" and model.type == "embedding":
+            provider = "openai-compatible"
+            # Ensure base_url is set for DashScope OpenAI-compatible API
+            if not config.get("base_url"):
+                config["base_url"] = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+            logger.debug(
+                f"Using OpenAI-compatible provider for DashScope embedding model {model.name}"
+            )
+
         # Create model based on type (Esperanto will cache the instance)
         if model.type == "language":
             return AIFactory.create_language(

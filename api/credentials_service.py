@@ -76,7 +76,7 @@ PROVIDER_MODALITIES: Dict[str, List[str]] = {
     "vertex": ["language", "embedding"],
     "azure": ["language", "embedding", "speech_to_text", "text_to_speech"],
     "openai_compatible": ["language", "embedding", "speech_to_text", "text_to_speech"],
-    "dashscope": ["language"],
+    "dashscope": ["language", "embedding"],  # embedding via OpenAI-compatible API
     "minimax": ["language"],
 }
 

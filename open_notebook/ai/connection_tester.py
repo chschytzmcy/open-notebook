@@ -38,6 +38,10 @@ TEST_MODELS = {
     "minimax": ("MiniMax-M2.5", "language"),
 }
 
+# DashScope embedding is accessed via OpenAI-compatible API
+DASHSCOPE_EMBEDDING_MODEL = "text-embedding-v3"
+DASHSCOPE_OPENAI_COMPATIBLE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+
 
 async def _test_azure_connection(
     endpoint: Optional[str] = None,
@@ -226,6 +230,29 @@ async def test_provider_connection(
             # For Azure, base_url from the UI form maps to endpoint
             azure_endpoint = endpoint or base_url
             return await _test_azure_connection(azure_endpoint, api_key, api_version)
+
+        # Special handling for DashScope embedding (uses OpenAI-compatible API)
+        if normalized_provider == "dashscope" and model_type == "embedding":
+            # DashScope embedding must be accessed via OpenAI-compatible provider
+            test_base_url = base_url or DASHSCOPE_OPENAI_COMPATIBLE_URL
+            test_api_key = api_key or os.environ.get("DASHSCOPE_API_KEY")
+            if not test_api_key:
+                return False, "No API key configured for DashScope"
+            try:
+                model = AIFactory.create_embedding(
+                    model_name=DASHSCOPE_EMBEDDING_MODEL,
+                    provider="openai-compatible",
+                    config={"api_key": test_api_key, "base_url": test_base_url}
+                )
+                await model.aembed(["test"])
+                return True, "Connection successful (DashScope embedding via OpenAI-compatible)"
+            except Exception as e:
+                error_msg = str(e)
+                if "401" in error_msg or "unauthorized" in error_msg.lower():
+                    return False, "Invalid API key"
+                elif "Incorrect API key" in error_msg:
+                    return False, "Invalid API key for DashScope"
+                return False, f"Connection failed: {error_msg[:100]}"
 
         # Get test model for provider
         if normalized_provider not in TEST_MODELS:
