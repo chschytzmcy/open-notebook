@@ -4,12 +4,24 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
+from loguru import logger
+
+# Disable proxy for all API calls (socks proxy not supported by httpx/esperanto)
+# This must be done after load_dotenv() but before importing other modules
+proxy_vars = [
+    "http_proxy", "https_proxy", "HTTP_PROXY", "HTTPS_PROXY",
+    "all_proxy", "ALL_PROXY", "ftp_proxy", "FTP_PROXY"
+]
+for var in proxy_vars:
+    if var in os.environ:
+        del os.environ[var]
+logger.info("Proxy environment variables cleared for API operations")
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from loguru import logger
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from api.auth import PasswordAuthMiddleware

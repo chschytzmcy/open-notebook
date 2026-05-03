@@ -573,7 +573,7 @@ async def discover_minimax_models() -> List[DiscoveredModel]:
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                "https://api.minimax.io/v1/models",
+                "https://api.minimaxi.com/anthropic/v1/models",
                 headers={"Authorization": f"Bearer {api_key}"},
                 timeout=30.0,
             )

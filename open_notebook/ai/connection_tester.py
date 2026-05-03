@@ -67,7 +67,7 @@ async def _test_azure_connection(
     test_endpoint = test_endpoint.rstrip("/")
 
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=10.0, trust_env=False) as client:
             response = await client.get(
                 f"{test_endpoint}/openai/models?api-version={test_api_version}",
                 headers={"api-key": test_api_key},
@@ -103,7 +103,7 @@ async def _test_azure_connection(
 async def _test_ollama_connection(base_url: str) -> Tuple[bool, str]:
     """Test Ollama server connectivity."""
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=10.0, trust_env=False) as client:
             # Try /api/tags endpoint (standard Ollama)
             response = await client.get(f"{base_url}/api/tags")
 
@@ -142,7 +142,7 @@ async def _test_openai_compatible_connection(base_url: str, api_key: Optional[st
         if api_key:
             headers["Authorization"] = f"Bearer {api_key}"
 
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=10.0, trust_env=False) as client:
             # Try /models endpoint (standard OpenAI-compatible)
             response = await client.get(f"{base_url}/models", headers=headers)
 
@@ -254,6 +254,45 @@ async def test_provider_connection(
                     return False, "Invalid API key for DashScope"
                 return False, f"Connection failed: {error_msg[:100]}"
 
+        # Special handling for MiniMax (uses Anthropic-compatible API)
+        if normalized_provider == "minimax":
+            test_api_key = api_key or os.environ.get("MINIMAX_API_KEY")
+            if not test_api_key:
+                return False, "No API key configured for MiniMax"
+            # Use provided base_url or default MiniMax Anthropic endpoint
+            minimax_base_url = base_url or "https://api.minimaxi.com/anthropic/v1"
+            try:
+                # MiniMax Anthropic API uses /messages endpoint, not /chat/completions
+                # So we test directly with httpx instead of using esperanto's OpenAI-compatible
+                import httpx
+                # Disable proxy for API testing (socks proxy not supported by httpx)
+                async with httpx.AsyncClient(trust_env=False) as client:
+                    response = await client.post(
+                        f"{minimax_base_url.rstrip('/')}/messages",
+                        headers={
+                            "Authorization": f"Bearer {test_api_key}",
+                            "Content-Type": "application/json",
+                            "anthropic-version": "2023-06-01"
+                        },
+                        json={
+                            "model": "MiniMax-M2.7",
+                            "max_tokens": 10,
+                            "messages": [{"role": "user", "content": "Hi"}]
+                        },
+                        timeout=30.0
+                    )
+                    if response.status_code == 200:
+                        return True, "Connection successful (MiniMax via Anthropic API)"
+                    elif response.status_code == 401:
+                        return False, "Invalid API key"
+                    else:
+                        return False, f"Connection failed: HTTP {response.status_code}"
+            except Exception as e:
+                error_msg = str(e)
+                if "connection" in error_msg.lower():
+                    return False, "Connection error - check network/endpoint"
+                return False, f"Connection failed: {error_msg[:100]}"
+
         # Get test model for provider
         if normalized_provider not in TEST_MODELS:
             return False, f"Unknown provider: {provider}"
@@ -277,9 +316,14 @@ async def test_provider_connection(
         if api_key:
             os.environ[f"{provider.upper()}_API_KEY"] = api_key
 
+        # Build config with base_url if provided
+        config = {}
+        if base_url:
+            config["base_url"] = base_url
+
         # Try to create the model and make a minimal call
         if test_model_type == "language":
-            model = AIFactory.create_language(model_name=model_to_use, provider=provider)
+            model = AIFactory.create_language(model_name=model_to_use, provider=provider, config=config if config else None)
             # Convert to LangChain and make a minimal call
             lc_model = model.to_langchain()
             await lc_model.ainvoke("Hi")

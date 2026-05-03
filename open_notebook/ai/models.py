@@ -159,6 +159,25 @@ class ModelManager:
                 f"Using OpenAI-compatible provider for DashScope embedding model {model.name}"
             )
 
+        # Special handling for MiniMax (uses OpenAI-compatible API)
+        # Esperanto doesn't support 'minimax' as a provider,
+        # but MiniMax provides OpenAI-compatible chat API at /v1/chat/completions
+        if provider == "minimax" and model.type == "language":
+            provider = "openai-compatible"
+            # MiniMax has two API modes:
+            # - Anthropic-compatible: https://api.minimaxi.com/anthropic/v1 (uses /messages)
+            # - OpenAI-compatible: https://api.minimaxi.com/v1 (uses /chat/completions)
+            # Esperanto uses OpenAI format, so we need the OpenAI-compatible endpoint
+            minimax_base_url = config.get("base_url", "")
+            if "anthropic" in minimax_base_url:
+                # Convert Anthropic endpoint to OpenAI-compatible endpoint
+                config["base_url"] = minimax_base_url.replace("/anthropic/v1", "/v1").replace("/anthropic4/v1", "/v1")
+            elif not minimax_base_url:
+                config["base_url"] = "https://api.minimaxi.com/v1"
+            logger.debug(
+                f"Using OpenAI-compatible provider for MiniMax language model {model.name}, base_url={config.get('base_url')}"
+            )
+
         # Create model based on type (Esperanto will cache the instance)
         if model.type == "language":
             return AIFactory.create_language(

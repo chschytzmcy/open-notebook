@@ -405,6 +405,75 @@ async def test_credential(credential_id: str) -> dict:
             )
             return {"provider": provider, "success": success, "message": message}
 
+        # MiniMax uses Anthropic-compatible API, needs special handling
+        if provider == "minimax":
+            import httpx
+            minimax_api_key = config.get("api_key")
+            minimax_base_url = config.get("base_url", "https://api.minimaxi.com/anthropic/v1")
+            if not minimax_api_key:
+                return {"provider": provider, "success": False, "message": "No API key configured"}
+            try:
+                # Disable proxy for API testing (socks proxy not supported by httpx)
+                async with httpx.AsyncClient(timeout=30.0, trust_env=False) as client:
+                    response = await client.post(
+                        f"{minimax_base_url.rstrip('/')}/messages",
+                        headers={
+                            "Authorization": f"Bearer {minimax_api_key}",
+                            "Content-Type": "application/json",
+                            "anthropic-version": "2023-06-01"
+                        },
+                        json={
+                            "model": "MiniMax-M2.7",
+                            "max_tokens": 10,
+                            "messages": [{"role": "user", "content": "Hi"}]
+                        }
+                    )
+                    if response.status_code == 200:
+                        return {"provider": provider, "success": True, "message": "Connection successful"}
+                    elif response.status_code == 401:
+                        return {"provider": provider, "success": False, "message": "Invalid API key"}
+                    else:
+                        return {"provider": provider, "success": False, "message": f"HTTP {response.status_code}: {response.text[:100]}"}
+            except Exception as e:
+                error_msg = str(e)
+                if "connection" in error_msg.lower():
+                    return {"provider": provider, "success": False, "message": "Connection error - check network/endpoint"}
+                return {"provider": provider, "success": False, "message": f"Error: {error_msg[:100]}"}
+
+        # DashScope uses OpenAI-compatible API, needs special handling to avoid proxy issues
+        if provider == "dashscope":
+            import httpx
+            dashscope_api_key = config.get("api_key")
+            dashscope_base_url = config.get("base_url", "https://dashscope.aliyuncs.com/compatible-mode/v1")
+            if not dashscope_api_key:
+                return {"provider": provider, "success": False, "message": "No API key configured"}
+            try:
+                # Disable proxy for API testing (socks proxy not supported by httpx)
+                async with httpx.AsyncClient(timeout=30.0, trust_env=False) as client:
+                    response = await client.post(
+                        f"{dashscope_base_url.rstrip('/')}/chat/completions",
+                        headers={
+                            "Authorization": f"Bearer {dashscope_api_key}",
+                            "Content-Type": "application/json"
+                        },
+                        json={
+                            "model": "qwen-plus",
+                            "max_tokens": 10,
+                            "messages": [{"role": "user", "content": "Hi"}]
+                        }
+                    )
+                    if response.status_code == 200:
+                        return {"provider": provider, "success": True, "message": "Connection successful"}
+                    elif response.status_code == 401:
+                        return {"provider": provider, "success": False, "message": "Invalid API key"}
+                    else:
+                        return {"provider": provider, "success": False, "message": f"HTTP {response.status_code}: {response.text[:100]}"}
+            except Exception as e:
+                error_msg = str(e)
+                if "connection" in error_msg.lower():
+                    return {"provider": provider, "success": False, "message": "Connection error - check network/endpoint"}
+                return {"provider": provider, "success": False, "message": f"Error: {error_msg[:100]}"}
+
         # Standard provider: use Esperanto to create and test
         from esperanto.factory import AIFactory
 
@@ -518,13 +587,13 @@ async def discover_with_config(provider: str, config: dict) -> List[dict]:
         "xai": "https://api.x.ai/v1/models",
         "openrouter": "https://openrouter.ai/api/v1/models",
         "dashscope": "https://dashscope.aliyuncs.com/compatible-mode/v1/models",
-        "minimax": "https://api.minimax.io/v1/models",
+        "minimax": "https://api.minimaxi.com/anthropic/v1/models",
     }
 
     if provider == "ollama":
         ollama_url = base_url or "http://localhost:11434"
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=30.0, proxy=None) as client:
                 response = await client.get(f"{ollama_url}/api/tags", timeout=10.0)
                 response.raise_for_status()
                 data = response.json()
@@ -544,7 +613,7 @@ async def discover_with_config(provider: str, config: dict) -> List[dict]:
             headers = {}
             if api_key:
                 headers["Authorization"] = f"Bearer {api_key}"
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=30.0, proxy=None) as client:
                 response = await client.get(
                     f"{base_url.rstrip('/')}/models", headers=headers, timeout=30.0,
                 )
@@ -567,7 +636,7 @@ async def discover_with_config(provider: str, config: dict) -> List[dict]:
         try:
             url = f"{endpoint.rstrip('/')}/openai/models?api-version={api_version}"
             headers = {"api-key": api_key}
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=30.0, proxy=None) as client:
                 response = await client.get(url, headers=headers, timeout=30.0)
                 response.raise_for_status()
                 data = response.json()
@@ -595,7 +664,7 @@ async def discover_with_config(provider: str, config: dict) -> List[dict]:
     if provider == "google":
         try:
             headers = {"X-Goog-Api-Key": api_key} if api_key else {}
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=30.0, proxy=None) as client:
                 response = await client.get(
                     "https://generativelanguage.googleapis.com/v1/models",
                     headers=headers,
@@ -622,7 +691,7 @@ async def discover_with_config(provider: str, config: dict) -> List[dict]:
         return []
 
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0, proxy=None) as client:
             response = await client.get(
                 discovery_url,
                 headers={"Authorization": f"Bearer {api_key}"},
