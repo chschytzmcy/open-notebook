@@ -16,6 +16,21 @@ from open_notebook.podcasts.models import (
     _resolve_model_config,
 )
 
+# Monkey patch esperanto to support DashScope TTS provider
+# Esperanto doesn't natively support 'dashscope' as a TTS provider,
+# so we register our custom DashScopeTextToSpeechModel wrapper
+try:
+    from esperanto.factory import AIFactory
+    from open_notebook.ai.dashscope_tts import DashScopeTextToSpeechModel
+
+    # Add dashscope to the TTS provider modules mapping
+    AIFactory._provider_modules["text_to_speech"]["dashscope"] = (
+        "open_notebook.ai.dashscope_tts:DashScopeTextToSpeechModel"
+    )
+    logger.debug("Registered DashScope TTS provider with esperanto AIFactory")
+except Exception as e:
+    logger.warning(f"Failed to register DashScope TTS provider: {e}")
+
 try:
     from podcast_creator import configure, create_podcast
 except ImportError as e:
