@@ -6,6 +6,7 @@ export const zhCN = {
     cancel: "取消",
     delete: "删除",
     edit: "编辑",
+    preview: "预览",
     theme: "主题",
     signOut: "退出登录",
     noMatches: "未找到匹配项",

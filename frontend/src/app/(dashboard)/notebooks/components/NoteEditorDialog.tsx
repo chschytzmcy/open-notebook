@@ -11,8 +11,10 @@ import { useCreateNote, useUpdateNote, useNote } from '@/lib/hooks/use-notes'
 import { QUERY_KEYS } from '@/lib/api/query-client'
 import { MarkdownEditor } from '@/components/ui/markdown-editor'
 import { InlineEdit } from '@/components/common/InlineEdit'
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
 import { useTranslation } from '@/lib/hooks/use-translation'
+import { Eye, Edit3, Maximize2, Minimize2 } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 
 const createNoteSchema = z.object({
   title: z.string().optional(),
@@ -25,7 +27,7 @@ interface NoteEditorDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   notebookId: string
-  note?: { id: string; title: string | null; content: string | null }
+  note?: { id: string; title: string | null; content: string | null; note_type?: string | null }
 }
 
 export function NoteEditorDialog({ open, onOpenChange, notebookId, note }: NoteEditorDialogProps) {
@@ -34,6 +36,7 @@ export function NoteEditorDialog({ open, onOpenChange, notebookId, note }: NoteE
   const updateNote = useUpdateNote()
   const queryClient = useQueryClient()
   const isEditing = Boolean(note)
+  const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit')
 
   // Ensure note ID has 'note:' prefix for API calls
   const noteIdWithPrefix = note?.id
@@ -56,11 +59,13 @@ export function NoteEditorDialog({ open, onOpenChange, notebookId, note }: NoteE
     },
   })
   const watchTitle = useWatch({ control, name: 'title' })
+  const watchContent = useWatch({ control, name: 'content' })
   const [isEditorFullscreen, setIsEditorFullscreen] = useState(false)
 
   useEffect(() => {
     if (!open) {
       reset({ title: '', content: '' })
+      setViewMode('edit')
       return
     }
 
@@ -114,42 +119,95 @@ export function NoteEditorDialog({ open, onOpenChange, notebookId, note }: NoteE
   const handleClose = () => {
     reset()
     setIsEditorFullscreen(false)
+    setViewMode('edit')
     onOpenChange(false)
+  }
+
+  const toggleViewMode = () => {
+    setViewMode(prev => prev === 'edit' ? 'preview' : 'edit')
   }
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className={cn(
-          "sm:max-w-3xl w-full max-h-[90vh] overflow-hidden p-0",
+          "sm:max-w-4xl w-full max-h-[90vh] overflow-hidden p-0 gap-0",
           isEditorFullscreen && "!max-w-screen !max-h-screen border-none w-screen h-screen"
       )}>
         <DialogTitle className="sr-only">
           {isEditing ? t('sources.editNote') : t('sources.createNote')}
         </DialogTitle>
-        <form onSubmit={handleSubmit(onSubmit)} className="flex h-full flex-col min-w-0">
+
+        {/* Header */}
+        <div className="border-b bg-muted/30 px-6 py-4 flex-shrink-0">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              {note?.note_type === 'ai' && (
+                <Badge variant="secondary" className="shrink-0">
+                  {t('common.aiGenerated')}
+                </Badge>
+              )}
+              <InlineEdit
+                id="note-title"
+                name="title"
+                value={watchTitle ?? ''}
+                onSave={(value) => setValue('title', value || '')}
+                placeholder={t('sources.addTitle')}
+                emptyText={t('sources.untitledNote')}
+                className="text-xl font-semibold truncate"
+                inputClassName="text-xl font-semibold"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {/* View mode toggle */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleViewMode}
+                className="gap-2"
+              >
+                {viewMode === 'edit' ? (
+                  <>
+                    <Eye className="h-4 w-4" />
+                    {t('common.preview')}
+                  </>
+                ) : (
+                  <>
+                    <Edit3 className="h-4 w-4" />
+                    {t('common.edit')}
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
           {isEditing && noteLoading ? (
             <div className="flex-1 flex items-center justify-center py-10">
               <span className="text-sm text-muted-foreground">{t('common.loading')}</span>
             </div>
           ) : (
-            <>
-              <div className="border-b px-6 py-4">
-                <InlineEdit
-                  id="note-title"
-                  name="title"
-                  value={watchTitle ?? ''}
-                  onSave={(value) => setValue('title', value || '')}
-                  placeholder={t('sources.addTitle')}
-                  emptyText={t('sources.untitledNote')}
-                  className="text-xl font-semibold"
-                  inputClassName="text-xl font-semibold"
-                />
-              </div>
-
-              <div className={cn(
-                  "flex-1 overflow-y-auto",
-                  !isEditorFullscreen && "px-6 py-4")
-              }>
+            <div className={cn(
+                "flex-1 overflow-y-auto",
+                !isEditorFullscreen && "px-6 py-4")
+            }>
+              {viewMode === 'preview' ? (
+                /* Preview mode - rendered markdown */
+                <div className="prose prose-sm dark:prose-invert max-w-none">
+                  {watchContent ? (
+                    <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+                      {watchContent}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground italic">
+                      {t('sources.writeNotePlaceholder')}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                /* Edit mode */
                 <Controller
                   control={control}
                   name="content"
@@ -159,38 +217,48 @@ export function NoteEditorDialog({ open, onOpenChange, notebookId, note }: NoteE
                       textareaId="note-content"
                       value={field.value}
                       onChange={field.onChange}
-                      height={420}
+                      height={isEditorFullscreen ? 600 : 450}
                       placeholder={t('sources.writeNotePlaceholder')}
+                      preview="live"
                       className={cn(
-                          "w-full h-full min-h-[420px] max-h-[500px] overflow-hidden [&_.w-md-editor]:!static [&_.w-md-editor]:!w-full [&_.w-md-editor]:!h-full [&_.w-md-editor-content]:overflow-y-auto",
-                          !isEditorFullscreen && "rounded-md border"
+                          "w-full h-full [&_.w-md-editor]:!static [&_.w-md-editor]:!w-full [&_.w-md-editor-content]:overflow-y-auto",
+                          !isEditorFullscreen && "rounded-lg border shadow-sm"
                       )}
                     />
                   )}
                 />
-                {errors.content && (
-                  <p className="text-sm text-red-600 mt-1">{errors.content.message}</p>
-                )}
-              </div>
-            </>
+              )}
+              {errors.content && viewMode === 'edit' && (
+                <p className="text-sm text-red-600 mt-2">{errors.content.message}</p>
+              )}
+            </div>
           )}
+        </div>
 
-          <div className="border-t px-6 py-4 flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={handleClose}>
-              {t('common.cancel')}
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSaving || (isEditing && noteLoading)}
-            >
-              {isSaving
-                ? isEditing ? `${t('common.saving')}...` : `${t('common.creating')}...`
-                : isEditing
-                  ? t('sources.saveNote')
-                  : t('sources.createNoteBtn')}
-            </Button>
+        {/* Footer */}
+        <div className="border-t bg-muted/30 px-6 py-4 flex-shrink-0">
+          <div className="flex justify-between items-center">
+            <div className="text-xs text-muted-foreground">
+              {isEditing ? t('sources.editNote') : t('sources.createNote')}
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={handleClose}>
+                {t('common.cancel')}
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSaving || (isEditing && noteLoading)}
+                onClick={handleSubmit(onSubmit)}
+              >
+                {isSaving
+                  ? isEditing ? `${t('common.saving')}...` : `${t('common.creating')}...`
+                  : isEditing
+                    ? t('sources.saveNote')
+                    : t('sources.createNoteBtn')}
+              </Button>
+            </div>
           </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   )

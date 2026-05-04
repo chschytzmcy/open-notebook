@@ -116,24 +116,27 @@ export function NotesColumn({
                 {notes.map((note) => (
                   <div
                     key={note.id}
-                    className="p-3 border rounded-lg card-hover group relative cursor-pointer"
+                    className="p-4 border rounded-xl bg-card hover:bg-accent/50 hover:border-primary/20 hover:shadow-md transition-all duration-200 group relative cursor-pointer"
                     onClick={() => setEditingNote(note)}
                   >
-                    <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
                         {note.note_type === 'ai' ? (
-                          <Bot className="h-4 w-4 text-primary" />
+                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-primary/10 text-primary">
+                            <Bot className="h-3.5 w-3.5" />
+                            <span className="text-xs font-medium">{t('common.aiGenerated')}</span>
+                          </div>
                         ) : (
-                          <User className="h-4 w-4 text-muted-foreground" />
+                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted text-muted-foreground">
+                            <User className="h-3.5 w-3.5" />
+                            <span className="text-xs font-medium">{t('common.human')}</span>
+                          </div>
                         )}
-                        <Badge variant="secondary" className="text-xs">
-                          {note.note_type === 'ai' ? t('common.aiGenerated') : t('common.human')}
-                        </Badge>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(note.updated), { 
+                          {formatDistanceToNow(new Date(note.updated), {
                             addSuffix: true,
                             locale: getDateLocale(language)
                           })}
@@ -156,7 +159,7 @@ export function NotesColumn({
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <MoreVertical className="h-4 w-4" />
@@ -179,11 +182,11 @@ export function NotesColumn({
                     </div>
 
                     {note.title && (
-                      <h4 className="text-sm font-medium mb-2 break-all">{note.title}</h4>
+                      <h4 className="text-base font-semibold mb-2 truncate">{note.title}</h4>
                     )}
 
                     {note.content && (
-                      <p className="text-sm text-muted-foreground line-clamp-3 break-all">
+                      <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
                         {note.content}
                       </p>
                     )}

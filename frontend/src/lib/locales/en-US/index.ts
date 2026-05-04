@@ -6,6 +6,7 @@ export const enUS = {
     cancel: "Cancel",
     delete: "Delete",
     edit: "Edit",
+    preview: "Preview",
     theme: "Theme",
     signOut: "Sign Out",
     noMatches: "No matches found",
