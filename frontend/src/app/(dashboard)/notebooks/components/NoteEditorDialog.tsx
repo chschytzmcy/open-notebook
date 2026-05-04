@@ -13,8 +13,9 @@ import { MarkdownEditor } from '@/components/ui/markdown-editor'
 import { InlineEdit } from '@/components/common/InlineEdit'
 import { cn } from "@/lib/utils"
 import { useTranslation } from '@/lib/hooks/use-translation'
-import { Eye, Edit3, Maximize2, Minimize2 } from 'lucide-react'
+import { Eye, Edit3 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import ReactMarkdown from 'react-markdown'
 
 const createNoteSchema = z.object({
   title: z.string().optional(),
@@ -195,11 +196,37 @@ export function NoteEditorDialog({ open, onOpenChange, notebookId, note }: NoteE
             }>
               {viewMode === 'preview' ? (
                 /* Preview mode - rendered markdown */
-                <div className="prose prose-sm dark:prose-invert max-w-none">
+                <div className="prose prose-sm dark:prose-invert max-w-none min-h-[400px] max-h-[500px] overflow-y-auto text-sm leading-relaxed p-1">
                   {watchContent ? (
-                    <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+                    <ReactMarkdown
+                      components={{
+                        h1: ({ children }) => <h1 className="text-xl font-bold mb-4 mt-6">{children}</h1>,
+                        h2: ({ children }) => <h2 className="text-lg font-semibold mb-3 mt-5">{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-base font-semibold mb-2 mt-4">{children}</h3>,
+                        p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
+                        ul: ({ children }) => <ul className="list-disc pl-4 mb-3">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal pl-4 mb-3">{children}</ol>,
+                        li: ({ children }) => <li className="mb-1">{children}</li>,
+                        code: ({ children, className }) => {
+                          const isInline = !className
+                          return isInline
+                            ? <code className="bg-muted px-1.5 py-0.5 rounded text-xs">{children}</code>
+                            : <code className={cn("block bg-muted p-3 rounded-lg text-xs overflow-x-auto", className)}>{children}</code>
+                        },
+                        blockquote: ({ children }) => <blockquote className="border-l-4 border-primary/50 pl-4 italic text-muted-foreground">{children}</blockquote>,
+                        a: ({ children, href }) => <a href={href} className="text-primary underline hover:no-underline">{children}</a>,
+                        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                        em: ({ children }) => <em className="italic">{children}</em>,
+                        table: ({ children }) => <table className="border-collapse w-full mb-4">{children}</table>,
+                        th: ({ children }) => <th className="border border-border px-3 py-2 bg-muted font-semibold text-left">{children}</th>,
+                        td: ({ children }) => <td className="border border-border px-3 py-2">{children}</td>,
+                        tr: ({ children }) => <tr className="border-b">{children}</tr>,
+                        thead: ({ children }) => <thead className="bg-muted/50">{children}</thead>,
+                        tbody: ({ children }) => <tbody>{children}</tbody>,
+                      }}
+                    >
                       {watchContent}
-                    </div>
+                    </ReactMarkdown>
                   ) : (
                     <p className="text-muted-foreground italic">
                       {t('sources.writeNotePlaceholder')}
