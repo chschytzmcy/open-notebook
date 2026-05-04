@@ -159,6 +159,30 @@ class ModelManager:
                 f"Using OpenAI-compatible provider for DashScope embedding model {model.name}"
             )
 
+        # Special handling for DashScope TTS (uses native DashScope SDK)
+        # Esperanto doesn't support 'dashscope' as a TTS provider
+        if provider == "dashscope" and model.type == "text_to_speech":
+            from open_notebook.ai.dashscope_tts import DashScopeTextToSpeechModel
+            logger.debug(
+                f"Using DashScope native TTS provider for model {model.name}"
+            )
+            return DashScopeTextToSpeechModel(
+                model_name=model.name,
+                config=config,
+            )
+
+        # Special handling for DashScope STT (uses native DashScope SDK)
+        # Esperanto doesn't support 'dashscope' as an STT provider
+        if provider == "dashscope" and model.type == "speech_to_text":
+            from open_notebook.ai.dashscope_stt import DashScopeSpeechToTextModel
+            logger.debug(
+                f"Using DashScope native STT provider for model {model.name}"
+            )
+            return DashScopeSpeechToTextModel(
+                model_name=model.name,
+                config=config,
+            )
+
         # Special handling for MiniMax (uses OpenAI-compatible API)
         # Esperanto doesn't support 'minimax' as a provider,
         # but MiniMax provides OpenAI-compatible chat API at /v1/chat/completions

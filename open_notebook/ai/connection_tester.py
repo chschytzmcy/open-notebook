@@ -35,6 +35,8 @@ TEST_MODELS = {
     "azure": ("gpt-35-turbo", "language"),  # Azure OpenAI deployment name
     "openai_compatible": (None, "language"),  # Dynamic - will use first available model
     "dashscope": ("qwen-plus", "language"),
+    "dashscope_tts": ("qwen3-tts-instruct-flash", "text_to_speech"),  # DashScope TTS via multimodal API
+    "dashscope_stt": ("paraformer-v2", "speech_to_text"),  # DashScope Paraformer STT
     "minimax": ("MiniMax-M2.5", "language"),
 }
 
@@ -254,6 +256,55 @@ async def test_provider_connection(
                     return False, "Invalid API key for DashScope"
                 return False, f"Connection failed: {error_msg[:100]}"
 
+        # Special handling for DashScope TTS (uses native DashScope SDK)
+        if normalized_provider == "dashscope" and model_type == "text_to_speech":
+            test_api_key = api_key or os.environ.get("DASHSCOPE_API_KEY")
+            if not test_api_key:
+                return False, "No API key configured for DashScope"
+            try:
+                from open_notebook.ai.dashscope_tts import DashScopeTextToSpeechModel
+                tts_model = DashScopeTextToSpeechModel(
+                    model_name="qwen3-tts-instruct-flash",
+                    api_key=test_api_key
+                )
+                # Test by generating a short audio
+                result = await tts_model.agenerate_speech(
+                    text="测试"
+                )
+                if result and result.audio_data:
+                    return True, f"Connection successful (DashScope TTS, {len(result.audio_data)} bytes)"
+                return True, "Connection successful (DashScope TTS)"
+            except ImportError:
+                return False, "DashScope SDK not installed. Run: pip install dashscope"
+            except Exception as e:
+                error_msg = str(e)
+                if "401" in error_msg or "unauthorized" in error_msg.lower() or "Invalid" in error_msg:
+                    return False, "Invalid API key"
+                return False, f"Connection failed: {error_msg[:100]}"
+
+        # Special handling for DashScope STT (uses native DashScope SDK)
+        if normalized_provider == "dashscope" and model_type == "speech_to_text":
+            test_api_key = api_key or os.environ.get("DASHSCOPE_API_KEY")
+            if not test_api_key:
+                return False, "No API key configured for DashScope"
+            try:
+                from open_notebook.ai.dashscope_stt import DashScopeSpeechToTextModel
+                stt_model = DashScopeSpeechToTextModel(
+                    model_name="paraformer-v2",
+                    api_key=test_api_key
+                )
+                # Test with a minimal WAV file
+                test_audio = _generate_test_wav()
+                result = await stt_model.atranscribe(audio_file=test_audio)
+                return True, "Connection successful (DashScope STT)"
+            except ImportError:
+                return False, "DashScope SDK not installed. Run: pip install dashscope"
+            except Exception as e:
+                error_msg = str(e)
+                if "401" in error_msg or "unauthorized" in error_msg.lower() or "Invalid" in error_msg:
+                    return False, "Invalid API key"
+                return False, f"Connection failed: {error_msg[:100]}"
+
         # Special handling for MiniMax (uses Anthropic-compatible API)
         if normalized_provider == "minimax":
             test_api_key = api_key or os.environ.get("MINIMAX_API_KEY")
@@ -382,6 +433,7 @@ DEFAULT_TEST_VOICES = {
     "google": "Kore",
     "vertex": "Kore",
     "openai_compatible": "alloy",
+    "dashscope": "longxiaochun",  # DashScope CosyVoice default voice
 }
 
 

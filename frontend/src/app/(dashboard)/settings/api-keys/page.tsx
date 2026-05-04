@@ -103,7 +103,7 @@ const PROVIDER_MODALITIES: Record<string, ModelType[]> = {
   azure: ['language', 'embedding', 'text_to_speech', 'speech_to_text'],
   vertex: ['language', 'embedding', 'text_to_speech'],
   openai_compatible: ['language', 'embedding', 'text_to_speech', 'speech_to_text'],
-  dashscope: ['language', 'embedding'],
+  dashscope: ['language', 'embedding', 'text_to_speech', 'speech_to_text'],
   minimax: ['language'],
 }
 

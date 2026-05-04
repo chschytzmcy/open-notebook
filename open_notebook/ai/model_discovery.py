@@ -134,7 +134,34 @@ ELEVENLABS_MODEL_TYPES = {
 DASHSCOPE_MODEL_TYPES = {
     "language": ["qwen"],
     "embedding": ["text-embedding", "embedding"],
+    "text_to_speech": ["tts"],
+    "speech_to_text": ["asr", "paraformer", "sensevoice"],
 }
+
+# Static list of DashScope TTS and STT models (not available via OpenAI-compatible API)
+# TTS models use multimodal-generation API
+DASHSCOPE_TTS_MODELS = [
+    "qwen3-tts-instruct-flash",
+    "qwen3-tts-vd-2026-01-26",
+    "qwen3-tts-vc-2026-01-22",
+    "qwen3-tts-instruct-flash-realtime",
+    "qwen3-tts-vd-realtime-2026-01-15",
+]
+
+# STT models (Paraformer, ASR)
+DASHSCOPE_STT_MODELS = [
+    # Valid Recognition API model names (tested against actual API)
+    "paraformer-realtime-v1",
+    "paraformer-realtime-v2",
+    "paraformer-realtime-8k-v1",
+]
+
+# Embedding models (text-embedding series, via OpenAI-compatible API)
+DASHSCOPE_EMBEDDING_MODELS = [
+    "text-embedding-v1",
+    "text-embedding-v2",
+    "text-embedding-v3",
+]
 
 MINIMAX_MODEL_TYPES = {
     "language": ["minimax", "abab"],
@@ -530,7 +557,11 @@ async def discover_elevenlabs_models() -> List[DiscoveredModel]:
 
 
 async def discover_dashscope_models() -> List[DiscoveredModel]:
-    """Fetch available models from DashScope (Qwen) API."""
+    """Fetch available models from DashScope (Qwen) API.
+
+    DashScope's OpenAI-compatible API only returns language and embedding models.
+    TTS (CosyVoice) and STT (Paraformer) models are added statically.
+    """
     api_key = os.environ.get("DASHSCOPE_API_KEY")
     if not api_key:
         return []
@@ -559,6 +590,36 @@ async def discover_dashscope_models() -> List[DiscoveredModel]:
                     )
     except Exception as e:
         logger.warning(f"Failed to discover DashScope models: {e}")
+
+    # Add static TTS models (not returned by OpenAI-compatible API)
+    for tts_model in DASHSCOPE_TTS_MODELS:
+        models.append(
+            DiscoveredModel(
+                name=tts_model,
+                provider="dashscope",
+                model_type="text_to_speech",
+            )
+        )
+
+    # Add static STT models (not returned by OpenAI-compatible API)
+    for stt_model in DASHSCOPE_STT_MODELS:
+        models.append(
+            DiscoveredModel(
+                name=stt_model,
+                provider="dashscope",
+                model_type="speech_to_text",
+            )
+        )
+
+    # Add static embedding models (may not be returned by OpenAI-compatible API)
+    for embedding_model in DASHSCOPE_EMBEDDING_MODELS:
+        models.append(
+            DiscoveredModel(
+                name=embedding_model,
+                provider="dashscope",
+                model_type="embedding",
+            )
+        )
 
     return models
 

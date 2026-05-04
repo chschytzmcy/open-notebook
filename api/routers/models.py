@@ -461,6 +461,15 @@ async def get_provider_availability():
                     ):
                         if has_db_cred or _check_azure_support(mode):
                             supported_types[provider].append(model_type)
+            # Special handling for DashScope TTS and STT (uses custom wrapper, not in Esperanto)
+            # DashScope supports: language (via OpenAI-compatible), embedding (via OpenAI-compatible),
+            # text_to_speech (via multimodal API wrapper), speech_to_text (via native SDK wrapper)
+            elif provider == "dashscope":
+                has_db_cred = await _check_provider_has_credential("dashscope")
+                has_env_key = os.environ.get("DASHSCOPE_API_KEY") is not None
+                if has_db_cred or has_env_key:
+                    # DashScope supports all model types through various APIs
+                    supported_types[provider] = ["language", "embedding", "text_to_speech", "speech_to_text"]
             else:
                 # Standard provider detection
                 for model_type, providers in esperanto_available.items():
