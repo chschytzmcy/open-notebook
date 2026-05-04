@@ -26,7 +26,7 @@ def token_count(input_string: str) -> int:
         import tiktoken
 
         encoding = tiktoken.get_encoding("o200k_base")
-        tokens = encoding.encode(input_string)
+        tokens = encoding.encode(input_string, disallowed_special=())
         return len(tokens)
     except (ImportError, OSError) as e:
         # Fallback: handles ImportError (tiktoken not installed) AND network/OS

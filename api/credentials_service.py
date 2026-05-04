@@ -409,14 +409,20 @@ async def test_credential(credential_id: str) -> dict:
         if provider == "minimax":
             import httpx
             minimax_api_key = config.get("api_key")
-            minimax_base_url = config.get("base_url", "https://api.minimaxi.com/anthropic/v1")
+            # Default base_url is the Anthropic-compatible endpoint
+            minimax_base_url = config.get("base_url", "https://api.minimaxi.com/anthropic")
             if not minimax_api_key:
                 return {"provider": provider, "success": False, "message": "No API key configured"}
             try:
+                # Normalize base_url: if it ends with /v1, add /messages; otherwise add /v1/messages
+                if minimax_base_url.rstrip("/").endswith("/v1"):
+                    endpoint = f"{minimax_base_url.rstrip('/')}/messages"
+                else:
+                    endpoint = f"{minimax_base_url.rstrip('/')}/v1/messages"
                 # Disable proxy for API testing (socks proxy not supported by httpx)
                 async with httpx.AsyncClient(timeout=30.0, trust_env=False) as client:
                     response = await client.post(
-                        f"{minimax_base_url.rstrip('/')}/messages",
+                        endpoint,
                         headers={
                             "Authorization": f"Bearer {minimax_api_key}",
                             "Content-Type": "application/json",
@@ -433,7 +439,13 @@ async def test_credential(credential_id: str) -> dict:
                     elif response.status_code == 401:
                         return {"provider": provider, "success": False, "message": "Invalid API key"}
                     else:
-                        return {"provider": provider, "success": False, "message": f"HTTP {response.status_code}: {response.text[:100]}"}
+                        # Include response body for debugging
+                        try:
+                            error_data = response.json()
+                            error_msg = error_data.get("error", {}).get("message", response.text[:100])
+                        except Exception:
+                            error_msg = response.text[:100]
+                        return {"provider": provider, "success": False, "message": f"HTTP {response.status_code}: {error_msg}"}
             except Exception as e:
                 error_msg = str(e)
                 if "connection" in error_msg.lower():

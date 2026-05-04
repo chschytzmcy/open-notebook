@@ -310,16 +310,24 @@ async def test_provider_connection(
             test_api_key = api_key or os.environ.get("MINIMAX_API_KEY")
             if not test_api_key:
                 return False, "No API key configured for MiniMax"
-            # Use provided base_url or default MiniMax Anthropic endpoint
-            minimax_base_url = base_url or "https://api.minimaxi.com/anthropic/v1"
+            # MiniMax Anthropic API base_url is https://api.minimaxi.com/anthropic
+            # Endpoint is /v1/messages (full URL: https://api.minimaxi.com/anthropic/v1/messages)
+            # User may configure base_url as either:
+            # - https://api.minimaxi.com/anthropic (correct, we add /v1/messages)
+            # - https://api.minimaxi.com/anthropic/v1 (we add /messages)
+            # Note: MiniMax uses Authorization: Bearer header (not x-api-key like standard Anthropic)
+            minimax_base_url = base_url or "https://api.minimaxi.com/anthropic"
             try:
-                # MiniMax Anthropic API uses /messages endpoint, not /chat/completions
-                # So we test directly with httpx instead of using esperanto's OpenAI-compatible
                 import httpx
+                # Normalize base_url: if it ends with /v1, we add /messages; otherwise add /v1/messages
+                if minimax_base_url.rstrip("/").endswith("/v1"):
+                    endpoint = f"{minimax_base_url.rstrip('/')}/messages"
+                else:
+                    endpoint = f"{minimax_base_url.rstrip('/')}/v1/messages"
                 # Disable proxy for API testing (socks proxy not supported by httpx)
                 async with httpx.AsyncClient(trust_env=False) as client:
                     response = await client.post(
-                        f"{minimax_base_url.rstrip('/')}/messages",
+                        endpoint,
                         headers={
                             "Authorization": f"Bearer {test_api_key}",
                             "Content-Type": "application/json",
@@ -337,7 +345,13 @@ async def test_provider_connection(
                     elif response.status_code == 401:
                         return False, "Invalid API key"
                     else:
-                        return False, f"Connection failed: HTTP {response.status_code}"
+                        # Include response body for debugging
+                        try:
+                            error_data = response.json()
+                            error_msg = error_data.get("error", {}).get("message", response.text[:100])
+                        except Exception:
+                            error_msg = response.text[:100]
+                        return False, f"Connection failed: HTTP {response.status_code} - {error_msg}"
             except Exception as e:
                 error_msg = str(e)
                 if "connection" in error_msg.lower():

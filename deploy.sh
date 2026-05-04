@@ -61,7 +61,7 @@ if [ "$SKIP_BUILD" = true ]; then
     log_info "Skipping build (using existing images)..."
 else
     log_info "Building Docker image..."
-    docker compose build --pull
+    docker compose build
 fi
 
 # Start services
