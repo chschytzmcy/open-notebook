@@ -16,6 +16,7 @@ import { useTranslation } from '@/lib/hooks/use-translation'
 import { Eye, Edit3 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 const createNoteSchema = z.object({
   title: z.string().optional(),
@@ -199,6 +200,7 @@ export function NoteEditorDialog({ open, onOpenChange, notebookId, note }: NoteE
                 <div className="prose prose-sm dark:prose-invert max-w-none min-h-[400px] max-h-[500px] overflow-y-auto text-sm leading-relaxed p-1">
                   {watchContent ? (
                     <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
                       components={{
                         h1: ({ children }) => <h1 className="text-xl font-bold mb-4 mt-6">{children}</h1>,
                         h2: ({ children }) => <h2 className="text-lg font-semibold mb-3 mt-5">{children}</h2>,
@@ -217,12 +219,16 @@ export function NoteEditorDialog({ open, onOpenChange, notebookId, note }: NoteE
                         a: ({ children, href }) => <a href={href} className="text-primary underline hover:no-underline">{children}</a>,
                         strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
                         em: ({ children }) => <em className="italic">{children}</em>,
-                        table: ({ children }) => <table className="border-collapse w-full mb-4">{children}</table>,
-                        th: ({ children }) => <th className="border border-border px-3 py-2 bg-muted font-semibold text-left">{children}</th>,
-                        td: ({ children }) => <td className="border border-border px-3 py-2">{children}</td>,
-                        tr: ({ children }) => <tr className="border-b">{children}</tr>,
-                        thead: ({ children }) => <thead className="bg-muted/50">{children}</thead>,
+                        table: ({ children }) => (
+                          <div className="my-4 overflow-x-auto">
+                            <table className="min-w-full border-collapse border border-border">{children}</table>
+                          </div>
+                        ),
+                        thead: ({ children }) => <thead className="bg-muted">{children}</thead>,
                         tbody: ({ children }) => <tbody>{children}</tbody>,
+                        tr: ({ children }) => <tr className="border-b border-border">{children}</tr>,
+                        th: ({ children }) => <th className="border border-border px-3 py-2 text-left font-semibold">{children}</th>,
+                        td: ({ children }) => <td className="border border-border px-3 py-2">{children}</td>,
                       }}
                     >
                       {watchContent}
