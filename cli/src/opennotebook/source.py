@@ -17,8 +17,10 @@ def register(parser: argparse.ArgumentParser):
     _source_parser = sub
     sub.add_argument("action", choices=["list", "add", "get", "delete"],
                      nargs="?", default=None, help="操作 (留空显示帮助)")
-    sub.add_argument("notebook_id", nargs="?", help="笔记本 ID")
     sub.add_argument("path", nargs="?", help="文件路径或 URL")
+    sub.add_argument("--notebook-id", dest="notebook_id", default=None, help="笔记本 ID（可选，不指定则创建独立来源）")
+    sub.add_argument("--title", dest="title", default=None, help="来源标题（可选）")
+    sub.add_argument("--embed", dest="embed", action="store_true", help="嵌入内容用于向量搜索")
     sub.set_defaults(handler=lambda a, c: _handle(a, c))
 
 
@@ -30,7 +32,7 @@ def _handle(args: argparse.Namespace, client: "OpenNotebookClient"):
     if action == "list":
         _list(client, args.notebook_id)
     elif action == "add":
-        _add(client, args.notebook_id, args.path)
+        _add(client, args.notebook_id, args.path, args.title, args.embed)
     elif action == "get":
         _get(client, args.path)
     elif action == "delete":
@@ -54,20 +56,32 @@ def _list(client: "OpenNotebookClient", notebook_id: str = None):
         print(f"    类型: {src.get('asset_type', 'unknown')}")
 
 
-def _add(client: "OpenNotebookClient", notebook_id: str, path: str):
+def _add(client: "OpenNotebookClient", notebook_id: str, path: str, title: str = None, embed: bool = False):
     """添加来源"""
-    if not notebook_id or not path:
-        print("Error: 请提供笔记本 ID 和文件路径或 URL")
+    if not path:
+        print("Error: 请提供文件路径或 URL")
         return
 
     # 判断是 URL 还是文件
     is_url = path.startswith("http://") or path.startswith("https://")
-    data = {
-        "notebook_id": notebook_id,
-        "asset": {"url": path} if is_url else {"file_path": path},
-    }
+    if is_url:
+        data = {
+            "type": "link",
+            "url": path,
+        }
+    else:
+        data = {
+            "type": "upload",
+            "file_path": path,
+        }
+    if notebook_id:
+        data["notebooks"] = [notebook_id]
+    if title:
+        data["title"] = title
+    data["embed"] = embed
+    data["async_processing"] = True
 
-    result = client.post("/sources", data)
+    result = client.post("/sources/json", data)
     print(f"添加成功: {result['id']} - {result.get('title', path)}")
     print(f"处理命令: {result.get('command_id', 'N/A')}")
 

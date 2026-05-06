@@ -13,11 +13,9 @@ clean:
 	@echo "Clean complete"
 
 install:
+	@echo "Building opennotebook CLI..."
+	make build
 	@echo "Installing to ~/.local/bin/..."
-	@if [ ! -d "../dist/opennotebook" ]; then \
-		echo "Binary not found, building first..."; \
-		make build; \
-	fi
 	mkdir -p ~/.local/bin
 	rm -rf ~/.local/bin/opennotebook-dir
 	rm -f ~/.local/bin/opennotebook
@@ -26,11 +24,44 @@ install:
 	chmod +x ~/.local/bin/opennotebook
 	@echo "Installed: opennotebook"
 
+	@echo "Installing skills to ~/.agents/skills/..."
+	@for skill in skills/*/; do \
+		skill_name=$$(basename $$skill); \
+		rm -rf ~/.agents/skills/$$skill_name; \
+		cp -r $$skill ~/.agents/skills/; \
+		echo "  Installed skill: $$skill_name"; \
+	done
+	@echo "Skills installed"
+
+	@echo "Creating symlinks in ~/.claude/skills/..."
+	@for skill in skills/*/; do \
+		skill_name=$$(basename $$skill); \
+		rm -f ~/.claude/skills/$$skill_name; \
+		ln -sf ../../.agents/skills/$$skill_name ~/.claude/skills/$$skill_name; \
+		echo "  Linked: $$skill_name"; \
+	done
+	@echo "Symlinks created"
+
 uninstall:
 	@echo "Uninstalling opennotebook..."
 	rm -rf ~/.local/bin/opennotebook-dir
 	rm -f ~/.local/bin/opennotebook
 	@echo "Uninstalled"
+
+	@echo "Removing symlinks from ~/.claude/skills/..."
+	@for skill in skills/*/; do \
+		skill_name=$$(basename $$skill); \
+		rm -f ~/.claude/skills/$$skill_name; \
+		echo "  Removed symlink: $$skill_name"; \
+	done
+
+	@echo "Uninstalling skills..."
+	@for skill in skills/*/; do \
+		skill_name=$$(basename $$skill); \
+		rm -rf ~/.agents/skills/$$skill_name; \
+		echo "  Removed skill: $$skill_name"; \
+	done
+	@echo "Skills uninstalled"
 
 test:
 	@echo "Running unit tests..."

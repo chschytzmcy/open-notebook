@@ -1,7 +1,7 @@
 ---
 name: open-notebook-notebook
 version: 1.0.0
-description: "管理研究笔记本，当用户需要列出笔记本、创建笔记本、查看笔记本详情时使用"
+description: "管理笔记本，当用户需要列出笔记本、创建笔记本、查看笔记本详情时使用"
 metadata:
   requires:
     bins: ["opennotebook"]
@@ -10,7 +10,7 @@ metadata:
 
 # notebook
 
-笔记本是研究材料的容器。
+笔记本是笔记材料的容器。
 
 ## 命令列表
 

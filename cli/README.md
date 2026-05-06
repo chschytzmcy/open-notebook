@@ -1,6 +1,6 @@
 # Open Notebook CLI
 
-命令行工具，用于管理 Open Notebook 研究笔记本。
+命令行工具，用于管理 Open Notebook 笔记本。
 
 ## 构建
 
@@ -36,7 +36,7 @@ opennotebook notebook get <id>
 
 # 来源管理
 opennotebook source list <notebook_id>
-opennotebook source add <notebook_id> <path_or_url>
+opennotebook source add <path_or_url> [--notebook-id <id>] [--title <title>] [--embed]
 
 # 笔记管理
 opennotebook note list <source_id>
