@@ -7,10 +7,16 @@ if TYPE_CHECKING:
     from opennotebook.client import OpenNotebookClient
 
 
+_note_parser = None
+
+
 def register(parser: argparse.ArgumentParser):
     """注册 note 子命令"""
+    global _note_parser
     sub = parser.add_parser("note", help="笔记管理")
-    sub.add_argument("action", choices=["list", "create", "get", "update", "delete"], help="操作")
+    _note_parser = sub
+    sub.add_argument("action", choices=["list", "create", "get", "update", "delete"],
+                     nargs="?", default=None, help="操作 (留空显示帮助)")
     sub.add_argument("source_id", nargs="?", help="来源 ID")
     sub.add_argument("id_or_title", nargs="?", help="笔记 ID 或标题")
     sub.add_argument("--content", help="笔记内容")
@@ -19,6 +25,9 @@ def register(parser: argparse.ArgumentParser):
 
 def _handle(args: argparse.Namespace, client: "OpenNotebookClient"):
     action = args.action
+    if action is None:
+        _note_parser.print_help()
+        return
     if action == "list":
         _list(client, args.source_id)
     elif action == "create":

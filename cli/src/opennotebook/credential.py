@@ -7,10 +7,16 @@ if TYPE_CHECKING:
     from opennotebook.client import OpenNotebookClient
 
 
+_credential_parser = None
+
+
 def register(parser: argparse.ArgumentParser):
     """注册 credential 子命令"""
+    global _credential_parser
     sub = parser.add_parser("credential", help="凭证管理")
-    sub.add_argument("action", choices=["list", "create", "test", "delete"], help="操作")
+    _credential_parser = sub
+    sub.add_argument("action", choices=["list", "create", "test", "delete"],
+                     nargs="?", default=None, help="操作 (留空显示帮助)")
     sub.add_argument("id", nargs="?", help="凭证 ID")
     sub.add_argument("--name", help="凭证名称")
     sub.add_argument("--provider", help="提供商 (openai, anthropic, etc.)")
@@ -20,6 +26,9 @@ def register(parser: argparse.ArgumentParser):
 
 def _handle(args: argparse.Namespace, client: "OpenNotebookClient"):
     action = args.action
+    if action is None:
+        _credential_parser.print_help()
+        return
     if action == "list":
         _list(client)
     elif action == "create":

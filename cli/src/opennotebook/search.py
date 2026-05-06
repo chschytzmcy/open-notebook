@@ -7,10 +7,15 @@ if TYPE_CHECKING:
     from opennotebook.client import OpenNotebookClient
 
 
+_search_parser = None
+
+
 def register(parser: argparse.ArgumentParser):
     """注册 search 子命令"""
+    global _search_parser
     sub = parser.add_parser("search", help="搜索内容")
-    sub.add_argument("query", help="搜索关键词")
+    _search_parser = sub
+    sub.add_argument("query", nargs="?", default=None, help="搜索关键词")
     sub.add_argument("--type", choices=["text", "vector"], default="text", help="搜索类型")
     sub.add_argument("--limit", type=int, default=10, help="结果数量")
     sub.add_argument("--sources", action="store_true", default=True, help="搜索来源")
@@ -19,6 +24,9 @@ def register(parser: argparse.ArgumentParser):
 
 
 def _handle(args: argparse.Namespace, client: "OpenNotebookClient"):
+    if args.query is None:
+        _search_parser.print_help()
+        return
     _search(client, args.query, args.type, args.limit, args.sources, args.notes)
 
 

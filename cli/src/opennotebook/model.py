@@ -7,16 +7,25 @@ if TYPE_CHECKING:
     from opennotebook.client import OpenNotebookClient
 
 
+_model_parser = None
+
+
 def register(parser: argparse.ArgumentParser):
     """注册 model 子命令"""
+    global _model_parser
     sub = parser.add_parser("model", help="模型管理")
-    sub.add_argument("action", choices=["list", "discover"], help="操作")
+    _model_parser = sub
+    sub.add_argument("action", choices=["list", "discover"],
+                     nargs="?", default=None, help="操作 (留空显示帮助)")
     sub.add_argument("--provider", help="提供商名称")
     sub.set_defaults(handler=lambda a, c: _handle(a, c))
 
 
 def _handle(args: argparse.Namespace, client: "OpenNotebookClient"):
     action = args.action
+    if action is None:
+        _model_parser.print_help()
+        return
     if action == "list":
         _list(client, args.provider)
     elif action == "discover":
