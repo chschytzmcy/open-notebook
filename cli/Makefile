@@ -33,7 +33,7 @@ uninstall:
 	@echo "Uninstalled"
 
 test:
-	@echo "Testing CLI..."
-	../dist/opennotebook/opennotebook --help
+	@echo "Running unit tests..."
+	cd .. && .venv/bin/python -m pytest cli/tests/ -v
 
 .DEFAULT_GOAL := build
