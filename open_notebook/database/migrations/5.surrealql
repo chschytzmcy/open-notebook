@@ -54,10 +54,13 @@ You are an insightful and analytical reader of academic papers, extracting the k
 - Avoid starting each bullet point with the same word to maintain variety.
 - Use clear and concise language that conveys the key ideas effectively.
 - Do not include warnings, disclaimers, or personal opinions.
-- Output only the requested sections with their respective labels.", 
-       apply_default: False 
+- Output only the requested sections with their respective labels.
+
+# OUTPUT LANGUAGE
+You must output all content in Chinese (中文). Regardless of the input language, always respond in Chinese.",
+       apply_default: False
    },
-  { 
+  {
        name: "Key Insights",
        title: "Key Insights", 
        description: "Extracts important insights and actionable items", 
@@ -82,10 +85,12 @@ Take a step back and think step-by-step about how to achieve the best possible r
 - You use bulleted lists for output, not numbered lists.
 - Do not start items with the same opening words.
 - Ensure you follow ALL these instructions when creating your output.
-", 
-       apply_default: False 
+
+# OUTPUT LANGUAGE
+You must output all content in Chinese (中文). Regardless of the input language, always respond in Chinese.",
+       apply_default: False
    },
-{ 
+{
        name: "Dense Summary",
        title: "Dense Summary", 
        description: "Creates a rich, deep summary of the content", 
@@ -97,10 +102,12 @@ LLMs are a kind of deep neural network. They have been demonstrated to embed kno
 
 # METHODOLOGY
 Render the input as a distilled list of succinct statements, assertions, associations, concepts, analogies, and metaphors. The idea is to capture as much, conceptually, as possible but with as few words as possible. Write it in a way that makes sense to you, as the future audience will be another language model, not a human. Use complete sentences.
-", 
-       apply_default: True 
+
+# OUTPUT LANGUAGE
+You must output all content in Chinese (中文). Regardless of the input language, always respond in Chinese.",
+       apply_default: True
    },
-{ 
+{
        name: "Reflections",
        title: "Reflection Questions", 
        description: "Generates reflection questions from the document to help explore it further", 
@@ -122,10 +129,13 @@ You extract deep, thought-provoking, and meaningful reflections from text conten
 - The reflections should encourage deeper inquiry and provide a synthesis that transcends surface-level observations.
 - Use bullet points, not numbered lists.
 - Every bullet should be formatted as a question that elicits contemplation or a statement that offers a profound insight.
-- Do not give warnings or notes; only output the requested section.", 
-       apply_default: False 
+- Do not give warnings or notes; only output the requested section.
+
+# OUTPUT LANGUAGE
+You must output all content in Chinese (中文). Regardless of the input language, always respond in Chinese.",
+       apply_default: False
    },
-{ 
+{
        name: "Table of Contents",
        title: "Table of Contents", 
        description: "Describes the different topics of the document", 
@@ -136,10 +146,13 @@ Your ToC should capture all major topics and transitions in the content and shou
 # TASK
 Analyze the provided content and create a Table of Contents:
 - Captures the core topics included in the text
-- Gives a small description of what is covered", 
-       apply_default: False 
+- Gives a small description of what is covered
+
+# OUTPUT LANGUAGE
+You must output all content in Chinese (中文). Regardless of the input language, always respond in Chinese.",
+       apply_default: False
    },
-{ 
+{
        name: "Simple Summary",
        title: "Simple Summary", 
        description: "Generates a small summary of the content", 
@@ -150,8 +163,11 @@ You are a content summarization assistant that creates dense, information-rich s
 Analyze the provided content and create a summary that:
 - Captures the core concepts and key information
 - Uses clear, direct language
-- Maintains context from any previous summaries", 
-       apply_default: False 
+- Maintains context from any previous summaries
+
+# OUTPUT LANGUAGE
+You must output all content in Chinese (中文). Regardless of the input language, always respond in Chinese.",
+       apply_default: False
    },
 ];
 
