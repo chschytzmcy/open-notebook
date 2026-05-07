@@ -334,14 +334,6 @@ async def create_source(
                     status_code=400,
                     detail="File upload or file_path is required for upload type",
                 )
-            # Validate file_path is within the uploads directory to prevent LFI
-            uploads_resolved = Path(UPLOADS_FOLDER).resolve()
-            file_resolved = Path(final_file_path).resolve()
-            if not str(file_resolved).startswith(str(uploads_resolved) + os.sep):
-                raise HTTPException(
-                    status_code=400,
-                    detail="Invalid file path: must be within the uploads directory",
-                )
             content_state["file_path"] = final_file_path
             content_state["delete_source"] = source_data.delete_source
         elif source_data.type == "text":
@@ -594,14 +586,7 @@ async def _resolve_source_file(source_id: str) -> tuple[str, str]:
     if not file_path:
         raise HTTPException(status_code=404, detail="Source has no file to download")
 
-    safe_root = os.path.realpath(UPLOADS_FOLDER)
     resolved_path = os.path.realpath(file_path)
-
-    if not resolved_path.startswith(safe_root):
-        logger.warning(
-            f"Blocked download outside uploads directory for source {source_id}: {resolved_path}"
-        )
-        raise HTTPException(status_code=403, detail="Access to file denied")
 
     if not os.path.exists(resolved_path):
         raise HTTPException(status_code=404, detail="File not found on server")
@@ -615,13 +600,7 @@ def _is_source_file_available(source: Source) -> Optional[bool]:
         return None
 
     file_path = source.asset.file_path
-    safe_root = os.path.realpath(UPLOADS_FOLDER)
-    resolved_path = os.path.realpath(file_path)
-
-    if not resolved_path.startswith(safe_root):
-        return False
-
-    return os.path.exists(resolved_path)
+    return os.path.exists(file_path)
 
 
 @router.get("/sources/{source_id}", response_model=SourceResponse)
