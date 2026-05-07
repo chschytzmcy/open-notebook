@@ -76,6 +76,22 @@ class OpenNotebookClient:
         """POST 请求"""
         return self._request("POST", path, data=data)
 
+    def post_formdata(
+        self,
+        path: str,
+        data: Optional[Dict[str, Any]] = None,
+        files: Optional[Dict[str, tuple]] = None,
+    ) -> Dict[str, Any]:
+        """POST 请求 with multipart/form-data (file upload)"""
+        url = f"/api{path}"
+        response = self.client.post(
+            url=url,
+            data=data,
+            files=files,
+        )
+        response.raise_for_status()
+        return response.json()
+
     def put(
         self, path: str, data: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:

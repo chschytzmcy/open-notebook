@@ -1,6 +1,8 @@
 """Open Notebook CLI - Source 子命令"""
 
 import argparse
+import json
+import os
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -69,19 +71,37 @@ def _add(client: "OpenNotebookClient", notebook_id: str, path: str, title: str =
             "type": "link",
             "url": path,
         }
-    else:
-        data = {
-            "type": "upload",
-            "file_path": path,
-        }
+        result = client.post("/sources/json", data)
+        print(f"添加成功: {result['id']} - {result.get('title', path)}")
+        print(f"处理命令: {result.get('command_id', 'N/A')}")
+        return
+
+    # 文件上传 - 使用 FormData 方式
+    if not os.path.exists(path):
+        print(f"Error: 文件不存在: {path}")
+        return
+
+    file_size = os.path.getsize(path)
+    print(f"上传文件: {path} ({file_size / 1024:.1f} KB)")
+
+    with open(path, "rb") as f:
+        file_content = f.read()
+
+    data = {
+        "type": "upload",
+        "embed": "true" if embed else "false",
+        "async_processing": "true",
+    }
     if notebook_id:
-        data["notebooks"] = [notebook_id]
+        data["notebooks"] = json.dumps([notebook_id])
     if title:
         data["title"] = title
-    data["embed"] = embed
-    data["async_processing"] = True
 
-    result = client.post("/sources/json", data)
+    files = {
+        "file": (os.path.basename(path), file_content, "application/octet-stream"),
+    }
+
+    result = client.post_formdata("/sources", data=data, files=files)
     print(f"添加成功: {result['id']} - {result.get('title', path)}")
     print(f"处理命令: {result.get('command_id', 'N/A')}")
 
