@@ -19,17 +19,11 @@ services:
     ports:
       - "8502:8502"  # Web UI
       - "5055:5055"  # REST API
+    env_file:
+      - .env
     environment:
-      # REQUIRED: Change this to your own secret string
-      # This encrypts your API keys in the database
-      - OPEN_NOTEBOOK_ENCRYPTION_KEY=change-me-to-a-secret-string
-
-      # Database connection (default values - no need to change)
+      # Database connection (must match docker-compose service name)
       - SURREAL_URL=ws://surrealdb:8000/rpc
-      - SURREAL_USER=root
-      - SURREAL_PASSWORD=root
-      - SURREAL_NAMESPACE=open_notebook
-      - SURREAL_DATABASE=open_notebook
     volumes:
       - ./notebook_data:/app/data
     depends_on:
