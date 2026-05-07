@@ -35,7 +35,7 @@ def create_parser() -> argparse.ArgumentParser:
     """创建 CLI 参数解析器"""
     parser = argparse.ArgumentParser(
         prog="opennotebook",
-        description="Open Notebook CLI - 研究笔记本管理工具",
+        description="Open Notebook CLI - 笔记本管理工具",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
