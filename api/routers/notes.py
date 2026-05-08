@@ -65,12 +65,13 @@ async def create_note(note_data: NoteCreate):
             title = result.get("output", "Untitled Note")
 
         # Validate note_type
-        note_type: Optional[Literal["human", "ai"]] = None
-        if note_data.note_type in ("human", "ai"):
+        valid_types = {"human", "ai", "flashcard", "mindmap"}
+        note_type: Optional[Literal["human", "ai", "flashcard", "mindmap"]] = None
+        if note_data.note_type in valid_types:
             note_type = note_data.note_type  # type: ignore[assignment]
         elif note_data.note_type is not None:
             raise HTTPException(
-                status_code=400, detail="note_type must be 'human' or 'ai'"
+                status_code=400, detail="note_type must be 'human', 'ai', 'flashcard', or 'mindmap'"
             )
 
         new_note = Note(
@@ -187,3 +188,31 @@ async def delete_note(note_id: str):
     except Exception as e:
         logger.error(f"Error deleting note {note_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error deleting note: {str(e)}")
+
+
+@router.post("/notebooks/{notebook_id}/notes/generate-studio")
+async def generate_studio_note(
+    notebook_id: str,
+    note_type: str = Query(..., description="Type of note: 'flashcard' or 'mindmap'"),
+):
+    """Generate a flashcard or mindmap note from notebook sources."""
+    try:
+        # Import here to avoid circular dependency
+        from api.studio_service import studio_service
+
+        if note_type == "flashcard":
+            result = await studio_service.generate_flashcards(notebook_id)
+            return result
+        elif note_type == "mindmap":
+            result = await studio_service.generate_mindmap(notebook_id)
+            return result
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="note_type must be 'flashcard' or 'mindmap'"
+            )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error generating studio note: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating note: {str(e)}")

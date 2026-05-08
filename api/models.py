@@ -196,6 +196,36 @@ class NoteResponse(BaseModel):
     command_id: Optional[str] = None
 
 
+# Studio API models (flashcards, mindmap)
+class FlashcardGenerateRequest(BaseModel):
+    source_ids: Optional[List[str]] = Field(
+        None, description="Specific source IDs to use (all sources if not provided)"
+    )
+    count: int = Field(10, description="Number of flashcards to generate")
+
+
+class FlashcardResponse(BaseModel):
+    id: str
+    notebook_id: str
+    question: str
+    answer: str
+    source_ids: Optional[List[str]] = None
+    created: str
+
+
+class MindMapGenerateRequest(BaseModel):
+    source_ids: Optional[List[str]] = Field(
+        None, description="Specific source IDs to use (all sources if not provided)"
+    )
+
+
+class MindMapResponse(BaseModel):
+    id: str
+    notebook_id: str
+    content: str
+    created: str
+
+
 # Embedding API models
 class EmbedRequest(BaseModel):
     item_id: str = Field(..., description="ID of the item to embed")

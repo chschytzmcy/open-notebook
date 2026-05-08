@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Plus, StickyNote, Bot, User, MoreVertical, Trash2 } from 'lucide-react'
+import { Plus, StickyNote, Bot, User, MoreVertical, Trash2, Lightbulb, Network, Loader2 } from 'lucide-react'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Badge } from '@/components/ui/badge'
@@ -20,13 +20,16 @@ import { formatDistanceToNow } from 'date-fns'
 import { ContextToggle } from '@/components/common/ContextToggle'
 import { ContextMode } from '../[id]/page'
 import { useDeleteNote } from '@/lib/hooks/use-notes'
+import { useGenerateFlashcards, useGenerateMindMap } from '@/lib/hooks/use-studio'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { CollapsibleColumn, createCollapseButton } from '@/components/notebooks/CollapsibleColumn'
 import { useNotebookColumnsStore } from '@/lib/stores/notebook-columns-store'
 import { useTranslation } from '@/lib/hooks/use-translation'
+import { FlashcardDeck } from './FlashcardDeck'
 
 interface NotesColumnProps {
   notes?: NoteResponse[]
+  sources?: { id: string }[]
   isLoading: boolean
   notebookId: string
   contextSelections?: Record<string, ContextMode>
@@ -35,6 +38,7 @@ interface NotesColumnProps {
 
 export function NotesColumn({
   notes,
+  sources,
   isLoading,
   notebookId,
   contextSelections,
@@ -47,6 +51,8 @@ export function NotesColumn({
   const [noteToDelete, setNoteToDelete] = useState<string | null>(null)
 
   const deleteNote = useDeleteNote()
+  const generateFlashcards = useGenerateFlashcards()
+  const generateMindMap = useGenerateMindMap()
 
   // Collapsible column state
   const { notesCollapsed, toggleNotes } = useNotebookColumnsStore()
@@ -87,6 +93,32 @@ export function NotesColumn({
               <div className="flex items-center gap-2">
                 <Button
                   size="sm"
+                  variant="outline"
+                  onClick={() => generateFlashcards.mutate(notebookId)}
+                  disabled={generateFlashcards.isPending || !sources?.length}
+                  title={t('studio.generateFlashcards')}
+                >
+                  {generateFlashcards.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Lightbulb className="h-4 w-4" />
+                  )}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => generateMindMap.mutate(notebookId)}
+                  disabled={generateMindMap.isPending || !sources?.length}
+                  title={t('studio.generateMindMap')}
+                >
+                  {generateMindMap.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Network className="h-4 w-4" />
+                  )}
+                </Button>
+                <Button
+                  size="sm"
                   onClick={() => {
                     setEditingNote(null)
                     setShowAddDialog(true)
@@ -113,7 +145,15 @@ export function NotesColumn({
               />
             ) : (
               <div className="space-y-3">
-                {notes.map((note) => (
+                {/* Flashcard deck with navigation */}
+                {notes.some(note => note.note_type === 'flashcard') && (
+                  <FlashcardDeck
+                    notes={notes}
+                    onDeleted={() => {}}
+                  />
+                )}
+                {/* Render regular notes */}
+                {notes.filter(note => note.note_type !== 'flashcard' && note.note_type !== 'mindmap').map((note) => (
                   <div
                     key={note.id}
                     className="p-4 border rounded-xl bg-card hover:bg-accent/50 hover:border-primary/20 hover:shadow-md transition-all duration-200 group relative cursor-pointer"

@@ -47,7 +47,7 @@ class Notebook(ObjectModel):
         try:
             srcs = await repo_query(
                 """
-            select * omit note.content, note.embedding from (
+            select * omit note.embedding from (
                 select in as note from artifact where out=$id
                 fetch note
             ) order by note.updated desc
@@ -557,7 +557,7 @@ class Source(ObjectModel):
 class Note(ObjectModel):
     table_name: ClassVar[str] = "note"
     title: Optional[str] = None
-    note_type: Optional[Literal["human", "ai"]] = None
+    note_type: Optional[Literal["human", "ai", "flashcard", "mindmap"]] = None
     content: Optional[str] = None
 
     @field_validator("content")

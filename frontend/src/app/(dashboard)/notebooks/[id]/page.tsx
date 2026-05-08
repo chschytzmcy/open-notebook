@@ -175,6 +175,7 @@ export default function NotebookPage() {
                 {mobileActiveTab === 'notes' && (
                   <NotesColumn
                     notes={notes}
+                    sources={sources}
                     isLoading={notesLoading}
                     notebookId={notebookId}
                     contextSelections={contextSelections.notes}
@@ -224,6 +225,7 @@ export default function NotebookPage() {
             )}>
               <NotesColumn
                 notes={notes}
+                sources={sources}
                 isLoading={notesLoading}
                 notebookId={notebookId}
                 contextSelections={contextSelections.notes}

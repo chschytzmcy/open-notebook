@@ -117,6 +117,32 @@ export interface UpdateNoteRequest {
   note_type?: string
 }
 
+// Studio API types (flashcards, mindmap)
+export interface FlashcardGenerateRequest {
+  source_ids?: string[]
+  count?: number
+}
+
+export interface FlashcardResponse {
+  id: string
+  notebook_id: string
+  question: string
+  answer: string
+  source_ids?: string[]
+  created: string
+}
+
+export interface MindMapGenerateRequest {
+  source_ids?: string[]
+}
+
+export interface MindMapResponse {
+  id: string
+  notebook_id: string
+  content: string
+  created: string
+}
+
 export interface UpdateSourceRequest {
   title?: string
   type?: 'link' | 'upload' | 'text'
